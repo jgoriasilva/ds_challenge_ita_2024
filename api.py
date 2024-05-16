@@ -27,9 +27,12 @@ app = FastAPI(title='API',
 async def get_prediction(data):
     data = pd.read_json(data)
     data = models['metarf'].transform(data)
-    proba = models['clf'].predict_proba(data)[:,1]
-    predictions = (proba > PREDICT_THRESHOLD).astype(int).tolist()
-    return {'predictions': predictions}
+    proba = models['clf'].predict_proba(data)[:,1].tolist()
+    # predictions = (proba > PREDICT_THRESHOLD).astype(int).tolist()
+    return {
+        # 'predictions': predictions,
+        'proba': proba,
+    }
 
 if __name__ == '__main__':
     uvicorn.run(uvicorn.run(app, host='127.0.0.1', workers=1))
