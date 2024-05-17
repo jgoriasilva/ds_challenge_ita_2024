@@ -16,8 +16,8 @@ async def lifespan(app: FastAPI):
     yield
     models['clf'] = None
 
-app = FastAPI(title='API', 
-                description='API for inference', 
+app = FastAPI(title='FastAPI', 
+                description='API for flight delay prediction', 
                 version='1.0',
                 lifespan=lifespan,
                 # debug=True,

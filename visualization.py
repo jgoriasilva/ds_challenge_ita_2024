@@ -1,7 +1,6 @@
 import dash
 from dash import dcc, html, Input, Output
 import pandas as pd
-from dash.dependencies import Input, Output
 import requests
 import plotly.express as px
 
@@ -15,37 +14,35 @@ def get_predictions(data: pd.DataFrame, url='http://127.0.0.1:8000/predict'):
         return None
 
 df = pd.read_csv('test.csv').sort_values(by=['dt_dep', 'dt_arr'])
-df['dt_dep'] = pd.to_datetime(df['dt_dep'],utc=True)
-df['dt_arr'] = pd.to_datetime(df['dt_arr'],utc=True)
+df['dt_dep'] = pd.to_datetime(df['dt_dep'], utc=True)
+df['dt_arr'] = pd.to_datetime(df['dt_arr'], utc=True)
 
 app = dash.Dash(__name__)
 
-# Define the layout of the application
+graphs = []
+for origem in df['origem'].unique():
+    graphs.append(
+        html.Div([
+            html.H2(f"Origem: {origem}", style={'textAlign': 'center', 'fontSize': '18px'}),
+            dcc.Graph(id=f'flight-delay-graph-{origem}', style={'height': '300px'})
+        ], style={'display': 'inline-block', 'width': '45%', 'margin': '10px'})
+    )
+
 app.layout = html.Div([
-    html.H1("Flight Delay Visualization"),
-    dcc.Dropdown(
-        df['origem'].unique(),
-        id='origem',
-    ),
+    html.H1("Previsão de atrasos", style={'textAlign': 'center'}),
     dcc.RadioItems(
-        ['Continuous', 'Manual'], 
+        ['Continuous', 'Manual'],
         'Continuous',
         id='continuous-manual',
         inline=True,
-        ),
-    dcc.Graph(id='flight-delay-graph'),
+        style={'textAlign': 'center', 'marginBottom': '20px'}
+    ),
+    html.Div(graphs, style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'center'}),
     dcc.Interval(
         id='interval-component',
-        interval=1000,  # in milliseconds
+        interval=5000,  # in milliseconds
         n_intervals=1
     ),
-    # dcc.Slider(
-    #     df['dt_dep'].min(),
-    #     df['dt_dep'].max(),
-    #     step=None,
-    #     value=df['dt_dep'].min(),
-    #     # marks={str(date): str(date) for date in }
-    # ),
 ])
 
 @app.callback(Output('interval-component', 'disabled'),
@@ -55,32 +52,37 @@ def disable_interval(mode):
         return True
     return False
 
-@app.callback(
-    Output('flight-delay-graph', 'figure'),
-    Input('interval-component', 'n_intervals'),
-    # Input('continuous-manual', 'value')
-)
-def update_graph(n):
-    global df
-    
-    n_samples = 100
-    data = df[(n-1)*n_samples:n*n_samples]
-    
-    # data = df.sample(n=, replace=True)
-    predictions = get_predictions(data)
-    data['predictions'] = predictions
-
-    fig = px.scatter(
-        data, 
-        x='dt_dep',
-        y='predictions',
-        color='origem',
+# Create a callback for each graph
+for origem in df['origem'].unique():
+    @app.callback(
+        Output(f'flight-delay-graph-{origem}', 'figure'),
+        Input('interval-component', 'n_intervals')
     )
+    def update_graph(n, origem=origem):
+        global df
+        
+        n_samples = 100
+        data = df[(n-1)*n_samples:n*n_samples]
+        data = data[data['origem'] == origem]
+        
+        predictions = get_predictions(data)
+        data['delay_probability'] = predictions
 
-    fig.update_layout(transition_duration=500)
+        fig = px.scatter(
+            data,
+            x='dt_dep',
+            y='delay_probability',
+            # color='origem',
+            hover_data=['origem', 'destino', 'flightid'],
+        )
 
-    return fig
+        fig.update_layout(
+            transition_duration=500,
+            xaxis_title='Time of departure',
+            yaxis_title='Probability of delay (%)'
+        )
 
+        return fig
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)
