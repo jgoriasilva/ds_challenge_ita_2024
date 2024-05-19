@@ -30,3 +30,9 @@ Information about runway marking changes was also available, including forecasts
 I developed a solution using both LightGBM and XGBoost models. A considerable work was done on exploring and visualizing the data, as well as tuning the hyperparameters of the models.
 
 I also used adversarial validation in my solution, which allow us to deal with the problem of model drift. Information about this is detailed in the *adversarial.ipynb* notebook.
+
+My solution also includes an API to deploy the model, which can be run by simply running `python api.py`.
+
+I have also developed a visualization tool which allows for real-time visualization of which flights present a higher probability of delay. To see it, first start the API and then simply run `python visualization.py` and open `127.0.0.1:8050` on your browser.
+
+Please note that to run all the models, you will need access to the original data provided at [the Kaggle page](https://www.kaggle.com/competitions/data-science-challenge-at-eef-2024/overview).

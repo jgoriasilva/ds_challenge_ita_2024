@@ -52,7 +52,6 @@ def disable_interval(mode):
         return True
     return False
 
-# Create a callback for each graph
 for origem in df['origem'].unique():
     @app.callback(
         Output(f'flight-delay-graph-{origem}', 'figure'),
